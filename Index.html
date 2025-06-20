@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wizard Scoreboard</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top, allowing scroll */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff; /* White container background */
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 30px;
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #e2e8f0; /* Light gray border */
+            padding: 12px 8px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.9rem; /* Slightly smaller font for compactness */
+        }
+        th {
+            background-color: #eff6ff; /* Light blue header background */
+            font-weight: 600;
+            color: #2563eb; /* Darker blue text */
+        }
+        td input {
+            width: 100%;
+            padding: 8px 4px;
+            border: 1px solid #cbd5e1; /* Light gray input border */
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+            background-color: #f8fafc; /* Very light background for inputs */
+            transition: border-color 0.2s ease-in-out;
+        }
+        td input:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue border on focus */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .score-input {
+            font-weight: 500;
+        }
+        .total-score-cell {
+            background-color: #dbeafe; /* Lighter blue for total cell */
+            font-weight: 700;
+            color: #1e40af; /* Even darker blue text */
+            font-size: 1rem;
+        }
+        .positive-score {
+            color: #10b981; /* Green for positive scores */
+            font-weight: 600;
+        }
+        .negative-score {
+            color: #ef4444; /* Red for negative scores */
+            font-weight: 600;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #3b82f6; /* Blue button */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .btn-secondary {
+            background-color: #60a5fa; /* Lighter blue button */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #3b82f6; /* Blue on hover */
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .btn-danger {
+            background-color: #ef4444; /* Red button */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626; /* Darker red on hover */
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+        }
+        .modal-content p {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            color: #334155; /* Dark gray text */
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .player-name-input {
+            background-color: transparent;
+            border: none;
+            text-align: center;
+            font-weight: 700;
+            color: #1f2937; /* Darker text for player names */
+            font-size: 1.1rem;
+            padding: 4px;
+        }
+        .player-name-input:focus {
+            outline: none;
+            border-bottom: 1px solid #3b82f6;
+        }
+        /* Sticky positioning for table headers and first column cells */
+        .sticky-col-header {
+            position: sticky;
+            left: 0;
+            z-index: 20; /* Higher z-index for top-left header */
+            background-color: #eff6ff; /* Match header background */
+        }
+        .sticky-cell {
+            position: sticky;
+            left: 0;
+            z-index: 10; /* Lower z-index than column headers but higher than normal cells */
+            background-color: #ffffff; /* Match body background */
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Wizard Scoreboard</h1>
+        <div class="text-center text-sm text-gray-600 mb-4">
+            User ID: <span id="userIdDisplay" class="font-mono text-gray-700 break-words">Loading...</span>
+        </div>
+
+        <!-- Setup Section: Add Players -->
+        <div id="setup-section" class="flex flex-col gap-6">
+            <h2 class="text-2xl font-bold text-center text-gray-700">Set Up Your Game</h2>
+
+            <div class="flex flex-col items-center justify-center gap-4">
+                <label for="maxPlayersInput" class="text-gray-700 font-medium">Max Players (1-7):</label>
+                <input type="number" id="maxPlayersInput" value="7" min="1" max="7"
+                       class="w-24 p-3 border border-gray-300 rounded-lg text-center
+                              focus:ring-2 focus:ring-blue-300 focus:border-blue-500 transition-all text-gray-800">
+            </div>
+
+            <div class="flex flex-col items-center justify-center gap-4">
+                <input type="text" id="playerNameInput" placeholder="Enter Player Name"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 focus:border-blue-500 transition-all text-gray-800"
+                    maxlength="15">
+                <button id="addPlayerBtn" class="btn btn-primary w-full sm:w-auto">Add Player</button>
+            </div>
+            <div id="playerList" class="mt-4 text-center">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Players:</h3>
+                <ul id="playersDisplayList" class="list-disc list-inside text-gray-600">
+                    <!-- Player names will be listed here by JavaScript -->
+                </ul>
+            </div>
+            <button id="startGameBtn" class="btn btn-primary mt-6 opacity-50 cursor-not-allowed" disabled>Start Game</button>
+        </div>
+
+        <!-- Game Section: Scoreboard and Game Controls -->
+        <div id="game-section" class="hidden flex-col gap-6">
+            <h2 class="text-2xl font-bold text-center text-gray-700">Current Game</h2>
+            <div class="flex flex-wrap justify-center gap-4">
+                <button id="startNewRoundBtn" class="btn btn-secondary">Start New Round</button>
+                <button id="clearGameBtn" class="btn btn-danger">Clear Game</button>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg shadow-md">
+                <table id="scoreboardTable">
+                    <thead>
+                        <!-- Header rows will be dynamically created here by JavaScript -->
+                    </thead>
+                    <tbody id="scoreboardBody">
+                        <!-- Scoreboard rows will be inserted here by JavaScript -->
+                    </tbody>
+                    <tfoot>
+                        <!-- Footer is no longer needed in this layout -->
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Alerts/Confirmations -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <div id="modalButtons" class="modal-buttons">
+                <!-- Buttons dynamically added based on modal type -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase instances and game data
+        let app, db, auth;
+        let players = []; // Stores player names and their round scores: [{name: "P1", rounds: [{bid: 0, tricks: 0, score: 0}]}, ...]
+        let currentRound = 0; // Starts from 0, increments before new round starts (Round 1, Round 2, etc.)
+        let gameRunning = false; // New state variable to track if game is in progress
+        let maxPlayers = 7; // Default max players
+        let appId;
+        let userId;
+        let isAuthReady = false;
+
+        // DOM Elements
+        const setupSection = document.getElementById('setup-section');
+        const gameSection = document.getElementById('game-section');
+        const scoreboardTable = document.getElementById('scoreboardTable');
+        const scoreboardBody = document.getElementById('scoreboardBody');
+        const playerNameInput = document.getElementById('playerNameInput');
+        const addPlayerBtn = document.getElementById('addPlayerBtn');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const startNewRoundBtn = document.getElementById('startNewRoundBtn');
+        const clearGameBtn = document.getElementById('clearGameBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const playersDisplayList = document.getElementById('playersDisplayList');
+        const maxPlayersInput = document.getElementById('maxPlayersInput');
+
+        const customModal = document.getElementById('customModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalButtons = document.getElementById('modalButtons');
+
+        /**
+         * Shows a custom modal with a message and optional confirmation buttons.
+         * @param {string} message - The message to display.
+         * @param {'info' | 'confirm'} type - The type of modal ('info' for alert, 'confirm' for confirmation).
+         * @param {function | null} onConfirm - Callback function if 'confirm' type is used and user confirms.
+         */
+        function showModal(message, type = 'info', onConfirm = null) {
+            modalMessage.textContent = message;
+            modalButtons.innerHTML = ''; // Clear previous buttons
+
+            if (type === 'info') {
+                const okBtn = document.createElement('button');
+                okBtn.textContent = 'OK';
+                okBtn.className = 'btn btn-primary';
+                okBtn.onclick = hideModal;
+                modalButtons.appendChild(okBtn);
+            } else if (type === 'confirm') {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.className = 'btn btn-secondary';
+                cancelBtn.onclick = hideModal;
+
+                const confirmBtn = document.createElement('button');
+                confirmBtn.textContent = 'Confirm';
+                confirmBtn.className = 'btn btn-danger';
+                confirmBtn.onclick = () => {
+                    hideModal();
+                    if (onConfirm) {
+                        onConfirm();
+                    }
+                };
+                modalButtons.appendChild(cancelBtn);
+                modalButtons.appendChild(confirmBtn);
+            }
+            customModal.classList.add('show');
+        }
+
+        /** Hides the custom modal. */
+        function hideModal() {
+            customModal.classList.remove('show');
+        }
+
+        /**
+         * Calculates the score for a single round based on bids and tricks taken.
+         * Wizard scoring: +20 points for hitting bid + 10 points per trick.
+         * -10 points for each trick off the bid.
+         * @param {number} bid - The number of tricks bid by the player.
+         * @param {number} tricks - The number of tricks actually taken by the player.
+         * @returns {number} The calculated score for the round.
+         */
+        function calculateRoundScore(bid, tricks) {
+            if (bid === tricks) {
+                return 20 + (tricks * 10);
+            } else {
+                return Math.abs(bid - tricks) * -10;
+            }
+        }
+
+        /** Renders or updates the entire scoreboard table based on the 'players' and 'currentRound' data. */
+        function renderScoreboard() {
+            const thead = scoreboardTable.querySelector('thead');
+            const tbody = scoreboardTable.querySelector('tbody');
+
+            thead.innerHTML = ''; // Clear existing header
+            tbody.innerHTML = ''; // Clear existing body
+
+            // --- Header Row ---
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = `
+                <th class="sticky-col-header">Player Name</th>
+                <th>Bid (Current Round)</th>
+                <th>Tricks (Current Round)</th>
+                <th>Score (Current Round)</th>
+                <th>Total Score</th>
+            `;
+            thead.appendChild(headerRow);
+
+            // --- Table Body: Rows for each player ---
+            players.forEach((player, playerIndex) => {
+                const playerRow = document.createElement('tr');
+
+                // First cell: Player Name (sticky)
+                const playerNameCell = document.createElement('td');
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.value = player.name;
+                nameInput.className = 'player-name-input';
+                nameInput.placeholder = 'Player Name';
+                nameInput.setAttribute('data-player-index', playerIndex);
+                nameInput.addEventListener('change', (e) => {
+                    players[playerIndex].name = e.target.value;
+                    saveGameData();
+                });
+                playerNameCell.appendChild(nameInput);
+                playerNameCell.classList.add('sticky-cell');
+                playerRow.appendChild(playerNameCell);
+
+                // Determine the index for the current round's data
+                const currentRoundIndex = currentRound - 1; // If currentRound is 1, index is 0
+
+                // Bid Input for Current Round
+                const bidTd = document.createElement('td');
+                const bidInput = document.createElement('input');
+                bidInput.type = 'number';
+                bidInput.min = "0";
+                bidInput.className = 'score-input';
+                bidInput.setAttribute('data-player-index', playerIndex);
+                bidInput.setAttribute('data-round-index', currentRoundIndex);
+                bidInput.setAttribute('data-type', 'bid');
+                bidInput.addEventListener('input', updateScore);
+                // Populate input if data for current round exists
+                if (player.rounds[currentRoundIndex]) {
+                    bidInput.value = player.rounds[currentRoundIndex].bid;
+                }
+                bidTd.appendChild(bidInput);
+                playerRow.appendChild(bidTd);
+
+                // Tricks Input for Current Round
+                const tricksTd = document.createElement('td');
+                const tricksInput = document.createElement('input');
+                tricksInput.type = 'number';
+                tricksInput.min = "0";
+                tricksInput.className = 'score-input';
+                tricksInput.setAttribute('data-player-index', playerIndex);
+                tricksInput.setAttribute('data-round-index', currentRoundIndex);
+                tricksInput.setAttribute('data-type', 'tricks');
+                tricksInput.addEventListener('input', updateScore);
+                // Populate input if data for current round exists
+                if (player.rounds[currentRoundIndex]) {
+                    tricksInput.value = player.rounds[currentRoundIndex].tricks;
+                }
+                tricksTd.appendChild(tricksInput);
+                playerRow.appendChild(tricksTd);
+
+                // Score Display for Current Round
+                const scoreTd = document.createElement('td');
+                let currentRoundScore = '';
+                if (player.rounds[currentRoundIndex] && typeof player.rounds[currentRoundIndex].score === 'number') {
+                    currentRoundScore = player.rounds[currentRoundIndex].score;
+                    scoreTd.classList.add(currentRoundScore >= 0 ? 'positive-score' : 'negative-score');
+                }
+                scoreTd.textContent = currentRoundScore;
+                playerRow.appendChild(scoreTd);
+
+                // Last cell: Player's Total Score (sum of all rounds)
+                const playerTotalScoreCell = document.createElement('td');
+                let playerTotalScore = 0;
+                player.rounds.forEach(round => {
+                    if (typeof round.score === 'number') {
+                        playerTotalScore += round.score;
+                    }
+                });
+                playerTotalScoreCell.textContent = playerTotalScore;
+                playerTotalScoreCell.classList.add('total-score-cell', playerTotalScore >= 0 ? 'positive-score' : 'negative-score');
+                playerRow.appendChild(playerTotalScoreCell);
+
+                tbody.appendChild(playerRow);
+            });
+        }
+
+        /**
+         * Handles input changes in bid and tricks fields, calculates scores, and saves data.
+         * @param {Event} event - The input event.
+         */
+        function updateScore(event) {
+            const playerIndex = parseInt(event.target.getAttribute('data-player-index'));
+            const roundIndex = parseInt(event.target.getAttribute('data-round-index'));
+            const type = event.target.getAttribute('data-type');
+            let value = event.target.valueAsNumber;
+
+            if (isNaN(value)) {
+                value = '';
+            }
+
+            if (!players[playerIndex]) {
+                console.error(`Player at index ${playerIndex} not found.`);
+                return;
+            }
+            // Ensure the round data object exists for the current round index
+            if (!players[playerIndex].rounds[roundIndex]) {
+                players[playerIndex].rounds[roundIndex] = { bid: '', tricks: '', score: '' };
+            }
+
+            players[playerIndex].rounds[roundIndex][type] = value;
+
+            const bid = players[playerIndex].rounds[roundIndex].bid;
+            const tricks = players[playerIndex].rounds[roundIndex].tricks;
+
+            if (typeof bid === 'number' && typeof tricks === 'number') {
+                players[playerIndex].rounds[roundIndex].score = calculateRoundScore(bid, tricks);
+            } else {
+                players[playerIndex].rounds[roundIndex].score = '';
+            }
+
+            renderScoreboard();
+            saveGameData();
+        }
+
+        /** Shows the setup section and hides the game section. */
+        function showSetupView() {
+            setupSection.classList.remove('hidden');
+            gameSection.classList.add('hidden');
+            updatePlayerListDisplay();
+            toggleStartGameButton();
+        }
+
+        /** Shows the game section and hides the setup section. */
+        function showGameView() {
+            setupSection.classList.add('hidden');
+            gameSection.classList.remove('hidden');
+            renderScoreboard();
+        }
+
+        /** Updates the displayed list of players in the setup section. */
+        function updatePlayerListDisplay() {
+            playersDisplayList.innerHTML = '';
+            if (players.length === 0) {
+                playersDisplayList.innerHTML = '<li class="text-gray-500">No players added yet.</li>';
+            } else {
+                players.forEach(player => {
+                    const li = document.createElement('li');
+                    li.textContent = player.name;
+                    playersDisplayList.appendChild(li);
+                });
+            }
+            toggleStartGameButton();
+        }
+
+        /** Toggles the disabled state of the 'Start Game' button. */
+        function toggleStartGameButton() {
+            if (players.length > 0) {
+                startGameBtn.disabled = false;
+                startGameBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                startGameBtn.disabled = true;
+                startGameBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        /** Adds a new player to the game if less than maxPlayers exist. */
+        function addPlayer() {
+            if (players.length >= maxPlayers) {
+                showModal(`Maximum of ${maxPlayers} players allowed.`);
+                return;
+            }
+            let playerName = playerNameInput.value.trim();
+            if (!playerName) {
+                playerName = `Player ${players.length + 1}`;
+            }
+
+            players.push({
+                name: playerName,
+                rounds: Array(currentRound).fill(null).map(() => ({ bid: '', tricks: '', score: '' }))
+            });
+            playerNameInput.value = '';
+
+            updatePlayerListDisplay();
+            saveGameData();
+        }
+
+        /**
+         * Starts the game, transitioning from setup to game view.
+         * This function is called by the 'Start Game' button.
+         */
+        function startGame() {
+            if (players.length === 0) {
+                showModal("Please add at least one player to start the game.");
+                return;
+            }
+
+            gameRunning = true;
+            showGameView();
+            // If it's the very first round of a new game, add the initial round data structure
+            if (currentRound === 0) {
+                // We increment currentRound here as a new round is effectively "started"
+                // when the game begins. This ensures currentRoundIndex will be 0 for the first round.
+                currentRound = 1;
+                players.forEach(player => {
+                    player.rounds.push({ bid: '', tricks: '', score: '' });
+                });
+            }
+            renderScoreboard(); // Render the scoreboard when showing game view
+            saveGameData();
+        }
+
+        /** Starts a new round, initializing new score entries for all players. */
+        function startNewRound() {
+            // Validate if all players have completed the previous round's bid and tricks
+            // Validation only applies if there is a previous round (currentRound > 0)
+            if (currentRound > 0) {
+                const previousRoundIndex = currentRound - 1;
+                let incompletePlayers = [];
+                players.forEach(player => {
+                    const roundData = player.rounds[previousRoundIndex];
+                    // Check if roundData exists and if bid/tricks are numbers (i.e., filled)
+                    if (!roundData || typeof roundData.bid !== 'number' || typeof roundData.tricks !== 'number') {
+                        incompletePlayers.push(player.name);
+                    }
+                });
+
+                if (incompletePlayers.length > 0) {
+                    showModal(`Please enter bid and tricks for all players in Round ${currentRound} before starting a new one. Missing for: ${incompletePlayers.join(', ')}`);
+                    return; // Prevent new round from starting
+                }
+            }
+
+            currentRound++; // Increment round number for the new round
+            players.forEach(player => {
+                // Add a new empty round data structure for each player for the new round
+                player.rounds.push({ bid: '', tricks: '', score: '' });
+            });
+            renderScoreboard(); // Update UI with new round
+            saveGameData(); // Save new round state
+        }
+
+        /** Clears all game data, effectively starting a new game and returning to setup view. */
+        function clearGameData() {
+            showModal("Are you sure you want to clear all game data? This cannot be undone.", 'confirm', () => {
+                players = [];
+                currentRound = 0;
+                gameRunning = false; // Reset game running state
+                showSetupView(); // Go back to setup view
+                saveGameData();
+                showModal("Game data cleared successfully!");
+            });
+        }
+
+        /** Saves the current game state to Firestore. */
+        async function saveGameData() {
+            if (!db || !userId || !isAuthReady) {
+                console.warn("Firestore not initialized or auth not ready. Cannot save data.");
+                return;
+            }
+            try {
+                // Store gameRunning state along with players and currentRound, and maxPlayers
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/wizard-scoreboard/gameData`);
+                await setDoc(docRef, { players: JSON.stringify(players), currentRound: currentRound, gameRunning: gameRunning, maxPlayers: maxPlayers });
+                console.log("Game data saved!");
+            } catch (error) {
+                console.error("Error saving game data:", error);
+            }
+        }
+
+        /** Loads game data from Firestore using a real-time listener. */
+        async function loadGameData() {
+            if (!db || !userId) {
+                console.warn("Firestore not initialized or userId not set. Cannot load data.");
+                return;
+            }
+            try {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/wizard-scoreboard/gameData`);
+                onSnapshot(docRef, (docSnap) => {
+                    if (isAuthReady) {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            players = JSON.parse(data.players);
+                            currentRound = data.currentRound;
+                            gameRunning = data.gameRunning || false;
+                            maxPlayers = data.maxPlayers || 7; // Load maxPlayers, default to 7
+                            maxPlayersInput.value = maxPlayers; // Update the input field
+                            console.log("Game data loaded:", players, currentRound, gameRunning, maxPlayers);
+                        } else {
+                            console.log("No existing game data found. Starting new game.");
+                            players = [];
+                            currentRound = 0;
+                            gameRunning = false;
+                            maxPlayers = 7; // Reset to default
+                            maxPlayersInput.value = maxPlayers;
+                        }
+
+                        if (gameRunning) {
+                            showGameView();
+                        } else {
+                            showSetupView();
+                        }
+                    }
+                }, (error) => {
+                    console.error("Error loading game data:", error);
+                });
+            } catch (error) {
+                console.error("Error setting up snapshot listener:", error);
+            }
+        }
+
+        /** Initializes Firebase and sets up authentication. */
+        async function initializeFirebase() {
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+            if (!firebaseConfig) {
+                console.error("Firebase config not found! Please ensure __firebase_config is set.");
+                userIdDisplay.textContent = "Error: Firebase Config Missing";
+                return;
+            }
+
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userIdDisplay.textContent = userId;
+                    isAuthReady = true;
+                    await loadGameData();
+                } else {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                            console.log("Signed in with custom token.");
+                        } else {
+                            await signInAnonymously(auth);
+                            userId = auth.currentUser?.uid || crypto.randomUUID();
+                            userIdDisplay.textContent = userId + " (Anonymous)";
+                            console.log("Signed in anonymously.");
+                        }
+                        isAuthReady = true;
+                        await loadGameData();
+                    } catch (error) {
+                        console.error("Error during authentication:", error);
+                        userIdDisplay.textContent = "Error: Auth Failed";
+                    }
+                }
+            });
+        }
+
+        // Event listener for maxPlayersInput change
+        maxPlayersInput.addEventListener('change', (e) => {
+            let value = parseInt(e.target.value);
+            if (isNaN(value) || value < 1) {
+                value = 1; // Minimum 1 player
+            } else if (value > 7) {
+                value = 7; // Maximum 7 players
+            }
+            e.target.value = value; // Update input field to corrected value
+            maxPlayers = value;
+            // If current players exceed new maxPlayers, remove excess players
+            if (players.length > maxPlayers) {
+                showModal(`You have ${players.length} players, but the new max is ${maxPlayers}. Excess players will be removed.`, 'confirm', () => {
+                    players = players.slice(0, maxPlayers);
+                    updatePlayerListDisplay();
+                    renderScoreboard(); // Re-render scoreboard with fewer players
+                    saveGameData();
+                });
+            } else {
+                 saveGameData(); // Save maxPlayers setting
+            }
+            updatePlayerListDisplay(); // Update display to reflect potential changes
+            // No need to call renderScoreboard here if no players were removed,
+            // as it would re-render needlessly. It's called after the modal confirmation.
+        });
+
+
+        // Event listeners for buttons and Firebase initialization on window load
+        window.onload = async () => {
+            addPlayerBtn.addEventListener('click', addPlayer);
+            startGameBtn.addEventListener('click', startGame);
+            startNewRoundBtn.addEventListener('click', startNewRound);
+            clearGameBtn.addEventListener('click', clearGameData);
+            await initializeFirebase();
+        };
+    </script>
+</body>
+</html>
